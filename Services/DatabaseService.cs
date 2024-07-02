@@ -1,14 +1,13 @@
-﻿
-using System.Data;
+﻿using System.Data;
 using System.Reflection;
 
-public class Model
+public class DatabaseService
 {
-    public DataTable GetData(string passportText)
+    public DataTable GetCitizenData(string passportNumber)
     {
         var result = new DataTable();
 
-        string pasportHash = ComputeSha256Hash(passportText);
+        string pasportHash = ComputeSha256Hash(passportNumber);
         string commandText = $"select * from passports where num='{pasportHash}' limit 1;";
 
         string dirName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);

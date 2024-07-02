@@ -1,7 +1,7 @@
 ﻿using System.Runtime.Serialization;
 
 [Serializable]
-internal class SQLiteException : Exception
+public class SQLiteException : Exception
 {
     public SQLiteException()
     {

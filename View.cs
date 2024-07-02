@@ -9,7 +9,7 @@
         _textResult = textResult;
     }
 
-    public string GetPasportText()
+    public string GetPasportNumber()
     {
         return _passportTextbox.Text;
     }

@@ -1,6 +1,6 @@
 ﻿using System.Data;
 
-public class Controller
+public class Presenter
 {
     private const string EnterPassportMessage = "Введите серию и номер паспорта";
     private const string WrongPassportFormatMessage = "Неверный формат серии или номера паспорта";
@@ -9,70 +9,63 @@ public class Controller
     private const string FailTextTemplate = "По паспорту «{0}» доступ к бюллетеню на дистанционном электронном голосовании НЕ ПРЕДОСТАВЛЯЛСЯ";
     private const string NotFoundTextTemplate = "Паспорт «{0}» в списке участников дистанционного голосования НЕ НАЙДЕН";
 
-    private const string SqlFileNotFoundError = "Файл db.sqlite не найден. Положите файл в папку вместе с exe.";
-
-    private readonly Model _model;
     private readonly View _view;
+    private readonly ISearchCitizenService _searchCitizenService;
 
-    public Controller(Model model, View view)
+    public Presenter(View view, ISearchCitizenService searchCitizenService)
     {
-        _model = model;
         _view = view;
+        _searchCitizenService = searchCitizenService;
     }
 
     public void PerformCheck()
     {
-        string passportText = _view.GetPasportText();
+        string passportNumber = _view.GetPasportNumber();
 
-        ValidateInput(passportText);
+        ValidateInput(passportNumber);
     }
 
-    private void ValidateInput(string passportText)
+    private void ValidateInput(string passportNumber)
     {
-        if (passportText == "")
+        if (passportNumber == string.Empty)
         {
             _view.DisplayMessage(EnterPassportMessage);
         }
-        else if (passportText.Length < 10)
+        else if (passportNumber.Length < 10)
         {
             _view.DisplayResult(WrongPassportFormatMessage);
         }
         else
         {
-            CheckPassport(passportText);
+            CheckPassport(passportNumber);
         }
     }
 
-    private void CheckPassport(string passportText)
+    private void CheckPassport(string passportNumber)
     {
-        var data = new DataTable();
+        Citizen? citizen = null;
 
         try
         {
-            data = _model.GetData(passportText);
+            citizen = _searchCitizenService.GetCitizen(passportNumber);
         }
-        catch (SQLiteException ex)
+        catch (SearchCitizenException ex)
         {
-            if (ex.ErrorCode != 1)
-                throw;
-
-            _view.DisplayMessage(SqlFileNotFoundError);
+            _view.DisplayMessage(ex.Message);
         }
 
-        _view.DisplayResult(GetResultMessage(passportText, data));
+        _view.DisplayResult(GetResultMessage(citizen, passportNumber));
     }
 
-    private dynamic GetResultMessage(string passportText, DataTable dataTable)
+    private dynamic GetResultMessage(Citizen? citizen, string passportNumber)
     {
         string messageTemplate = NotFoundTextTemplate;
 
-        if (dataTable.Rows.Count > 0)
+        if (citizen != null)
         {
-            bool isValid = Convert.ToBoolean(dataTable.Rows[0].ItemArray[1]);
-
-            messageTemplate = isValid ? SuccessTextTemplate : FailTextTemplate;
+            messageTemplate = citizen.IsVoted ? SuccessTextTemplate : FailTextTemplate;
         }
 
-        return string.Format(messageTemplate, passportText);
+        return string.Format(messageTemplate, passportNumber);
     }
 }
