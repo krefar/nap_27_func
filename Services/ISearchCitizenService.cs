@@ -1,4 +1,4 @@
 ﻿public interface ISearchCitizenService
 {
-    Citizen? GetCitizen(string passportNumber);
+    Citizen GetCitizen(Passport passportNumber);
 }

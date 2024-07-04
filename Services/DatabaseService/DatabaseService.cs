@@ -1,13 +1,12 @@
 ﻿using System.Data;
 using System.Reflection;
 
-public class DatabaseService
+public class DatabaseService : IDatabaseService
 {
-    public DataTable GetCitizenData(string passportNumber)
+    public DataTable GetCitizenData(string pasportHash)
     {
         var result = new DataTable();
 
-        string pasportHash = ComputeSha256Hash(passportNumber);
         string commandText = $"select * from passports where num='{pasportHash}' limit 1;";
 
         string dirName = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -22,10 +21,5 @@ public class DatabaseService
         connection.Close();
 
         return result;
-    }
-
-    private string ComputeSha256Hash(string passportText)
-    {
-        throw new NotImplementedException();
     }
 }

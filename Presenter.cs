@@ -2,56 +2,48 @@
 
 public class Presenter
 {
-    private const string EnterPassportMessage = "Введите серию и номер паспорта";
-    private const string WrongPassportFormatMessage = "Неверный формат серии или номера паспорта";
-
     private const string SuccessTextTemplate = "По паспорту «{0}» доступ к бюллетеню на дистанционном электронном голосовании ПРЕДОСТАВЛЕН";
     private const string FailTextTemplate = "По паспорту «{0}» доступ к бюллетеню на дистанционном электронном голосовании НЕ ПРЕДОСТАВЛЯЛСЯ";
-    private const string NotFoundTextTemplate = "Паспорт «{0}» в списке участников дистанционного голосования НЕ НАЙДЕН";
+    
 
-    private readonly View _view;
+    private readonly IView _view;
     private readonly ISearchCitizenService _searchCitizenService;
 
-    public Presenter(View view, ISearchCitizenService searchCitizenService)
+    public Presenter(IView view, ISearchCitizenService searchCitizenService)
     {
         _view = view;
         _searchCitizenService = searchCitizenService;
     }
 
-    public void PerformCheck()
+    public void PerformCheck(string passportNumber)
     {
-        string passportNumber = _view.GetPasportNumber();
-
-        ValidateInput(passportNumber);
-    }
-
-    private void ValidateInput(string passportNumber)
-    {
-        if (passportNumber == string.Empty)
-        {
-            _view.DisplayMessage(EnterPassportMessage);
-        }
-        else if (passportNumber.Length < 10)
-        {
-            _view.DisplayResult(WrongPassportFormatMessage);
-        }
-        else
-        {
-            CheckPassport(passportNumber);
-        }
+        CheckPassport(passportNumber);
     }
 
     private void CheckPassport(string passportNumber)
     {
+        Passport passport;
+
+        try
+        {
+            passport = new Passport(passportNumber);
+        }
+        catch (InvalidPassportException ex)
+        {
+            _view.DisplayMessage(ex.Message);
+            return;
+        }
+
         Citizen? citizen = null;
 
         try
         {
-            citizen = _searchCitizenService.GetCitizen(passportNumber);
+            citizen = _searchCitizenService.GetCitizen(passport);
         }
         catch (SearchCitizenException ex)
         {
             _view.DisplayMessage(ex.Message);
+            return;
         }
 
         _view.DisplayResult(GetResultMessage(citizen, passportNumber));
@@ -59,12 +51,7 @@ public class Presenter
 
     private dynamic GetResultMessage(Citizen? citizen, string passportNumber)
     {
-        string messageTemplate = NotFoundTextTemplate;
-
-        if (citizen != null)
-        {
-            messageTemplate = citizen.IsVoted ? SuccessTextTemplate : FailTextTemplate;
-        }
+        string messageTemplate = citizen.IsVoted ? SuccessTextTemplate : FailTextTemplate;
 
         return string.Format(messageTemplate, passportNumber);
     }

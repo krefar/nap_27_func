@@ -1,4 +1,4 @@
-﻿public class View
+﻿public class View : IView
 {
     private readonly dynamic _passportTextbox;
     private readonly dynamic _textResult;

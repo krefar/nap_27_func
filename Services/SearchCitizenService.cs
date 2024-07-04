@@ -3,21 +3,29 @@
 public class SearchCitizenService : ISearchCitizenService
 {
     private const string SqlFileNotFoundError = "Файл db.sqlite не найден. Положите файл в папку вместе с exe.";
+    private const string NotFoundTextTemplate = "Паспорт «{0}» в списке участников дистанционного голосования НЕ НАЙДЕН";
 
-    private readonly DatabaseService _databaseService;
+    private readonly IDatabaseService _databaseService;
+    private readonly IHashService _hashService;
 
-    public SearchCitizenService(DatabaseService databaseService)
+    public SearchCitizenService(IDatabaseService databaseService, IHashService hashService)
     {
         _databaseService = databaseService ?? throw new ArgumentNullException(nameof(databaseService));
+        _hashService = hashService ?? throw new ArgumentNullException(nameof(hashService));
     }
 
-    public Citizen? GetCitizen(string passportNumber)
+    public Citizen GetCitizen(Passport passport)
     {
+        if (passport == null)
+            throw new ArgumentNullException(nameof(passport));
+
         DataTable searchResult = new DataTable();
 
         try
         {
-            searchResult = _databaseService.GetCitizenData(passportNumber);
+            string passportHash = _hashService.ComputeHash(passport.SerialNumber);
+
+            searchResult = _databaseService.GetCitizenData(passportHash);
         }
         catch (SQLiteException ex)
         {
@@ -27,19 +35,17 @@ public class SearchCitizenService : ISearchCitizenService
             throw new SearchCitizenException(SqlFileNotFoundError);
         }
 
-        return ConverResultToCitizen(searchResult);
+        return ConvertResultToCitizen(searchResult);
     }
 
-    private Citizen? ConverResultToCitizen(DataTable searchResult)
+    private Citizen ConvertResultToCitizen(DataTable searchResult)
     {
-        if (searchResult.Rows.Count > 0)
-        {
-            string pasportNum = Convert.ToString(searchResult.Rows[0].ItemArray[0]);
-            bool isVoted = Convert.ToBoolean(searchResult.Rows[0].ItemArray[1]);
+        if (searchResult.Rows.Count == 0)
+            throw new SearchCitizenException(NotFoundTextTemplate);
 
-            return new Citizen(new Passport(pasportNum), isVoted);
-        }
+        string pasportNum = Convert.ToString(searchResult.Rows[0].ItemArray[0]);
+        bool isVoted = Convert.ToBoolean(searchResult.Rows[0].ItemArray[1]);
 
-        return null;
+        return new Citizen(new Passport(pasportNum), isVoted);
     }
 }
