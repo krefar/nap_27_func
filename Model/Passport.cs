@@ -4,24 +4,22 @@
     private const string WrongPassportFormatMessage = "Неверный формат серии или номера паспорта";
     private const int NumberLength = 10;
 
-    private readonly string _number;
-
     public Passport(string number)
     {
-        _number = string.IsNullOrWhiteSpace(number) ? throw new ArgumentOutOfRangeException(nameof(number)) : number;
+        SerialNumber = string.IsNullOrWhiteSpace(number) ? throw new ArgumentOutOfRangeException(nameof(number)) : number;
 
         Validate();
     }
 
-    public string SerialNumber => _number;
+    public string SerialNumber { get; private set; }
 
     private void Validate()
     {
-        if (_number == string.Empty)
+        if (SerialNumber == string.Empty)
         {
             throw new InvalidPassportException(EnterPassportMessage);
         }
-        else if (_number.Length < NumberLength)
+        else if (SerialNumber.Length < NumberLength)
         {
             throw new InvalidPassportException(WrongPassportFormatMessage);
         }

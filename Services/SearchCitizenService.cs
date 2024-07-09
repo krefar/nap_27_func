@@ -2,7 +2,6 @@
 
 public class SearchCitizenService : ISearchCitizenService
 {
-    private const string SqlFileNotFoundError = "Файл db.sqlite не найден. Положите файл в папку вместе с exe.";
     private const string NotFoundTextTemplate = "Паспорт «{0}» в списке участников дистанционного голосования НЕ НАЙДЕН";
 
     private readonly IDatabaseService _databaseService;
@@ -19,27 +18,18 @@ public class SearchCitizenService : ISearchCitizenService
         if (passport == null)
             throw new ArgumentNullException(nameof(passport));
 
-        DataTable searchResult = new DataTable();
+        string passportHash = _hashService.ComputeHash(passport.SerialNumber);
 
-        try
-        {
-            string passportHash = _hashService.ComputeHash(passport.SerialNumber);
-
-            searchResult = _databaseService.GetCitizenData(passportHash);
-        }
-        catch (SQLiteException ex)
-        {
-            if (ex.ErrorCode != 1)
-                throw;
-
-            throw new SearchCitizenException(SqlFileNotFoundError);
-        }
+        DataTable searchResult = _databaseService.GetCitizenData(passportHash);
 
         return ConvertResultToCitizen(searchResult);
     }
 
     private Citizen ConvertResultToCitizen(DataTable searchResult)
     {
+        if (searchResult == null)
+            throw new ArgumentNullException(nameof(searchResult));
+
         if (searchResult.Rows.Count == 0)
             throw new SearchCitizenException(NotFoundTextTemplate);
 

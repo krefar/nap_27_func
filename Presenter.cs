@@ -4,7 +4,8 @@ public class Presenter
 {
     private const string SuccessTextTemplate = "По паспорту «{0}» доступ к бюллетеню на дистанционном электронном голосовании ПРЕДОСТАВЛЕН";
     private const string FailTextTemplate = "По паспорту «{0}» доступ к бюллетеню на дистанционном электронном голосовании НЕ ПРЕДОСТАВЛЯЛСЯ";
-    
+
+    private const string SqlFileNotFoundError = "Файл db.sqlite не найден. Положите файл в папку вместе с exe.";
 
     private readonly IView _view;
     private readonly ISearchCitizenService _searchCitizenService;
@@ -22,34 +23,32 @@ public class Presenter
 
     private void CheckPassport(string passportNumber)
     {
-        Passport passport;
-
         try
         {
-            passport = new Passport(passportNumber);
-        }
-        catch (InvalidPassportException ex)
-        {
-            _view.DisplayMessage(ex.Message);
-            return;
-        }
+            var passport = new Passport(passportNumber);
+            Citizen citizen = _searchCitizenService.GetCitizen(passport);
 
-        Citizen? citizen = null;
-
-        try
-        {
-            citizen = _searchCitizenService.GetCitizen(passport);
+            _view.DisplayResult(GetResultMessage(citizen, passportNumber));
         }
-        catch (SearchCitizenException ex)
+        catch (Exception ex)
         {
-            _view.DisplayMessage(ex.Message);
-            return;
-        }
+            if (ex is SQLiteException)
+            {
+                _view.DisplayMessage(SqlFileNotFoundError);
+                return;
+            }
 
-        _view.DisplayResult(GetResultMessage(citizen, passportNumber));
+            if (ex is InvalidPassportException || ex is SearchCitizenException)
+            {
+                _view.DisplayMessage(ex.Message);
+                return;
+            }
+
+            throw;
+        }
     }
 
-    private dynamic GetResultMessage(Citizen? citizen, string passportNumber)
+    private dynamic GetResultMessage(Citizen citizen, string passportNumber)
     {
         string messageTemplate = citizen.IsVoted ? SuccessTextTemplate : FailTextTemplate;
 

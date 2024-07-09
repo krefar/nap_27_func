@@ -1,15 +1,12 @@
 ﻿public class Citizen
 {
-    private readonly Passport _passport;
-    private readonly bool _isVoted;
-
     public Citizen(Passport passport, bool isVoted)
     {
-        _passport = passport ?? throw new ArgumentNullException(nameof(passport));
-        _isVoted = isVoted;
+        Passport = passport ?? throw new ArgumentNullException(nameof(passport));
+        IsVoted = isVoted;
     }
 
-    public Passport Passport => _passport;
+    public Passport Passport { get; private set; }
 
-    public bool IsVoted => _isVoted;
+    public bool IsVoted { get; private set; }
 }

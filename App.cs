@@ -4,8 +4,6 @@
     private readonly dynamic _textResult;
 
     private readonly IView _view;
-    private readonly Presenter _presenter;
-    private readonly ISearchCitizenService _searchCitizenService;
 
     public App(dynamic passportTextbox, dynamic textResult)
     {
@@ -13,12 +11,5 @@
         _textResult = textResult;
 
         _view = new View(_passportTextbox, _textResult);
-        _searchCitizenService = new SearchCitizenService(new DatabaseService(), new HashService());
-        _presenter = new Presenter(_view, _searchCitizenService);
-    }
-
-    private void checkButton_Click(object sender, EventArgs e)
-    {
-        _presenter.PerformCheck(_view.GetPasportNumber());
     }
 }
