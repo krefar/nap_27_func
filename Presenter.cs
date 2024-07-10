@@ -30,25 +30,21 @@ public class Presenter
 
             _view.DisplayResult(GetResultMessage(citizen, passportNumber));
         }
-        catch (Exception ex)
+        catch (SQLiteException ex)
         {
-            if (ex is SQLiteException)
-            {
-                _view.DisplayMessage(SqlFileNotFoundError);
-                return;
-            }
-
-            if (ex is InvalidPassportException || ex is SearchCitizenException)
-            {
-                _view.DisplayMessage(ex.Message);
-                return;
-            }
-
-            throw;
+            _view.DisplayMessage(SqlFileNotFoundError);
+        }
+        catch (InvalidPassportException ex)
+        {
+            _view.DisplayMessage(ex.Message);
+        }
+        catch (SearchCitizenException ex)
+        {
+            _view.DisplayMessage(ex.Message);
         }
     }
 
-    private dynamic GetResultMessage(Citizen citizen, string passportNumber)
+    private string GetResultMessage(Citizen citizen, string passportNumber)
     {
         string messageTemplate = citizen.IsVoted ? SuccessTextTemplate : FailTextTemplate;
 
